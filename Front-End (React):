@@ -1,0 +1,77 @@
+// Install required packages:
+// npm install web3 @openzeppelin/contracts
+// npm install react-web3 react-bootstrap
+
+import React, { useState, useEffect } from 'react';
+import { Web3Provider } from 'react-web3';
+import { VotingTokenABI, VotingABI } from './contractABIs'; // Import contract ABIs
+import { Button, Form } from 'react-bootstrap';
+
+const App = () => {
+  const [web3, setWeb3] = useState(null);
+  const [account, setAccount] = useState('');
+  const [votingContract, setVotingContract] = useState(null);
+  const [selectedOption, setSelectedOption] = useState(1);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        // Connect to MetaMask or other web3 provider
+        const web3Instance = new Web3Provider('ethereum');
+        await web3Instance.enable();
+        setWeb3(web3Instance);
+
+        // Get user account
+        const accounts = await web3Instance.eth.getAccounts();
+        setAccount(accounts[0]);
+
+        // Load smart contract
+        const votingTokenAddress = '0x123...'; // Replace with your VotingToken contract address
+        const votingContractAddress = '0x456...'; // Replace with your Voting contract address
+        const votingToken = new web3Instance.eth.Contract(VotingTokenABI, votingTokenAddress);
+        const voting = new web3Instance.eth.Contract(VotingABI, votingContractAddress);
+        setVotingContract({ votingToken, voting });
+      } catch (error) {
+        console.error('Error initializing app:', error);
+      }
+    };
+
+    init();
+  }, []);
+
+  const handleVote = async () => {
+    try {
+      // Call the vote function on the smart contract
+      await votingContract.voting.methods.vote(selectedOption).send({ from: account });
+      console.log('Vote successful');
+    } catch (error) {
+      console.error('Error voting:', error);
+    }
+  };
+
+  return (
+    <div>
+      <h1>Voting dApp</h1>
+      <p>Account: {account}</p>
+
+      <Form>
+        <Form.Group>
+          <Form.Label>Select Option:</Form.Label>
+          <Form.Control as="select" onChange={(e) => setSelectedOption(parseInt(e.target.value))}>
+            <option value={1}>Option 1</option>
+            <option value={2}>Option 2</option>
+            <option value={3}>Option 3</option>
+            <option value={4}>Option 4</option>
+            <option value={5}>Option 5</option>
+          </Form.Control>
+        </Form.Group>
+
+        <Button variant="primary" onClick={handleVote}>
+          Vote
+        </Button>
+      </Form>
+    </div>
+  );
+};
+
+export default App;
